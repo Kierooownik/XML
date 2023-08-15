@@ -16,8 +16,7 @@ namespace XML_Data_Reader
 
             ProcessXmlFile(xmlFilePath);
 
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey(); // Czekaj na wciśnięcie dowolnego klawisza
+            
         }
 
         static void ProcessXmlFile(string xmlFilePath)
@@ -27,35 +26,100 @@ namespace XML_Data_Reader
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(xmlFilePath);
 
-                XmlNodeList arrayOfParameterNodes = xmlDoc.SelectNodes("//chanelParameter/ArrayOfParameter");
+                XmlNodeList parameterNodes = xmlDoc.SelectNodes("//chanelParameter/ArrayOfParameter/Parameter");
 
-                foreach (XmlNode arrayOfParameterNode in arrayOfParameterNodes)
+                
+
+                string input;
+                do
                 {
-                    XmlAttribute nameAttribute = arrayOfParameterNode.Attributes["name"];
-                    if(nameAttribute !=null)
+                    Console.WriteLine("Enter the parameter index to retrieve its value:");
+                    input = Console.ReadLine();
+
+                    if (input.ToLower() == "exit")
                     {
-                        string arrayOfParameterName = nameAttribute.Value;
-                        Console.WriteLine();
-                        Console.WriteLine(arrayOfParameterName);
+                        break;
                     }
-                    
 
-                    XmlNodeList parameterNodes = arrayOfParameterNode.SelectNodes("Parameter");
-
-                    foreach (XmlNode parameterNode in parameterNodes)
+                    int index;
+                    if (int.TryParse(input, out index))
                     {
-                        string name = parameterNode.SelectSingleNode("name").InnerText;
-                        string value = parameterNode.SelectSingleNode("value").InnerText;
-                        string index = parameterNode.SelectSingleNode("index").InnerText;
+                        bool parameterFound = false;
 
-                        Console.WriteLine($"{index} {name} = {value}");
+                        foreach (XmlNode parameterNode in parameterNodes)
+                        {
+                            int parameterIndex;
+                            if (int.TryParse(parameterNode.SelectSingleNode("index").InnerText, out parameterIndex))
+                            {
+                                if (parameterIndex == index)
+                                {
+                                    string name = parameterNode.SelectSingleNode("name").InnerText;
+                                    string value = parameterNode.SelectSingleNode("value").InnerText;
+
+                                    Console.WriteLine($"{name} = {value}");
+                                    Console.WriteLine();
+                                    parameterFound = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if(!parameterFound)
+                        {
+                            Console.WriteLine("Parameter with the specified index not found.");
+                        }
                     }
-                }
+                    else
+                    {
+                        Console.WriteLine("Invalid input");
+                    }
+                } while (true);
+                
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred: {ex.Message}");
             }
         }
+
+       
+
+        //static void ProcessXmlFile(string xmlFilePath)
+        //{
+        //    try
+        //    {
+        //        XmlDocument xmlDoc = new XmlDocument();
+        //        xmlDoc.Load(xmlFilePath);
+
+        //        XmlNodeList arrayOfParameterNodes = xmlDoc.SelectNodes("//chanelParameter/ArrayOfParameter");
+
+        //        foreach (XmlNode arrayOfParameterNode in arrayOfParameterNodes)
+        //        {
+        //            XmlAttribute nameAttribute = arrayOfParameterNode.Attributes["name"];
+        //            if(nameAttribute !=null)
+        //            {
+        //                string arrayOfParameterName = nameAttribute.Value;
+        //                Console.WriteLine();
+        //                Console.WriteLine(arrayOfParameterName);
+        //            }
+
+
+        //            XmlNodeList parameterNodes = arrayOfParameterNode.SelectNodes("Parameter");
+
+        //            foreach (XmlNode parameterNode in parameterNodes)
+        //            {
+        //                string name = parameterNode.SelectSingleNode("name").InnerText;
+        //                string value = parameterNode.SelectSingleNode("value").InnerText;
+        //                string index = parameterNode.SelectSingleNode("index").InnerText;
+
+        //                Console.WriteLine($"{index} {name} = {value}");
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"An error occurred: {ex.Message}");
+        //    }
+        //}
     }
 }

@@ -1,0 +1,7 @@
+C:\Users\Kierownik\Documents\C#\XML\XML Data Reader\bin\Debug\XML Data Reader.exe.config
+C:\Users\Kierownik\Documents\C#\XML\XML Data Reader\bin\Debug\XML Data Reader.exe
+C:\Users\Kierownik\Documents\C#\XML\XML Data Reader\bin\Debug\XML Data Reader.pdb
+C:\Users\Kierownik\Documents\C#\XML\XML Data Reader\obj\Debug\XML Data Reader.csproj.AssemblyReference.cache
+C:\Users\Kierownik\Documents\C#\XML\XML Data Reader\obj\Debug\XML Data Reader.csproj.CoreCompileInputs.cache
+C:\Users\Kierownik\Documents\C#\XML\XML Data Reader\obj\Debug\XML Data Reader.exe
+C:\Users\Kierownik\Documents\C#\XML\XML Data Reader\obj\Debug\XML Data Reader.pdb

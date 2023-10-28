@@ -13,36 +13,46 @@ namespace XML_Data_Reader
     {
         static void Main(string[] args)
         {
+            //Ustawienie kontekstu licencji dla pakietu Excel
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+            //Pobranie ścieżki do XML referencyjnego
             Console.WriteLine("Proszę podać ścieżkę do pliku xml urządzenia referencyjnego");
             string referencePath = Console.ReadLine();
 
+            //Pobranie ścieżki do folderu z XML do analizy
             Console.WriteLine("Proszę podać ścieżkę do folderu z plikami xml do sprawdzenia");
             string folderPath = Console.ReadLine();
             string[] xmlFiles = Directory.GetFiles(folderPath, "*.xml");
 
+            //Utworzenie ścieżki wyjściowej dla pliku Excel
             string outputPath = Path.Combine(folderPath, "output.xlsx");
             
+            //Wybór typu wyświetlania danych
             Console.WriteLine($"Aby otrzymać pełne dane wpisz 'full', aby otrzymać tylko parametry z różniącymi się wartościami wpisz 'diff'");
             string displayType = Console.ReadLine();
 
+            //Przetworzenie pliku XML referencyjnego i przechowanie danych w słowniku
             Dictionary<int, ParameterInfo> referenceParameters = ProcessXmlFile(referencePath);
 
+            //Inicjalizacja pakietu Excel
             using (var package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("Dane");
 
+                //Ustawienie indeksu wiersza referencyjnego
                 int rowReferenceIndex = 2;
                 worksheet.Cells[1, 3].Value = referenceParameters[31318].Value;
                 foreach (var parameter in referenceParameters)
                 {
+                    //Wypełnienie arkusza danymi z pliku referencyjnego
                     worksheet.Cells[rowReferenceIndex, 1].Value = parameter.Key;
                     worksheet.Cells[rowReferenceIndex, 2].Value = parameter.Value.Name;
                     worksheet.Cells[rowReferenceIndex, 3].Value = parameter.Value.Value;
                     rowReferenceIndex++;
                 }
 
-
+                //Analiza danych zgodnie z wybranym typem wyświetlania
                 if (displayType == "full")
                 {
                     ProcessXmlToWorksheet(worksheet, xmlFiles, referencePath, referenceParameters);
@@ -53,13 +63,12 @@ namespace XML_Data_Reader
                     ProcessXmlToWorksheet(worksheet, xmlFiles, referencePath, referenceParameters);
 
                     //Usuwanie wierszy z takimi samymi ustawieniami we wszystkich plikach
-                    for (int row=2; row <= worksheet.Dimension.End.Row; row++)
+                    for(int row = worksheet.Dimension.End.Row; row >= 2; row--)
                     {
-                        if (AllCellsInRowEqual(worksheet, row))
+                        if(AllCellsInRowEqual(worksheet, row))
                         {
-                            worksheet.Cells[row, 1].Value = "All Equal";
-                            //worksheet.DeleteRow(row);
-                            Console.WriteLine("Test");
+                            worksheet.DeleteRow(row);
+                            //Console.WriteLine(AllCellsInRowEqual(worksheet, row));
                         }
                     }
 
@@ -74,32 +83,35 @@ namespace XML_Data_Reader
                 package.SaveAs(fileInfo);
                 
             }
+            //Informacje o zakończeniu eksportu danych do pliku Excel
             Console.WriteLine("Export to .xls finished");
             Console.WriteLine("Press any key to exit");
             Console.ReadKey();
             System.Diagnostics.Process.Start(outputPath);
 
-
-            
         }
+        //Klasa zawierająca informacje o parametrze
         class ParameterInfo
         {
             public string Name { get; set; }
             public string Value { get; set; }
         }
 
-
+        //Metoda do przetwarzania pliku XMl i przechowania danych w słowniku
         static Dictionary<int, ParameterInfo> ProcessXmlFile(string xmlFilePath)
         {
             Dictionary<int, ParameterInfo> parameters = new Dictionary<int, ParameterInfo>();
 
             try
             {
+                //Wczytanie pliku XML
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(xmlFilePath);
 
+                //Wyodrębnienie węzłow parametrów z pliku XML
                 XmlNodeList parameterNodes = xmlDoc.SelectNodes("//chanelParameter/ArrayOfParameter/Parameter");
 
+                //Iteracja przez węzły parametrów i zapisanie informacji do słownika
                 foreach (XmlNode parameterNode in parameterNodes)
                 {
                     int index;
@@ -120,26 +132,35 @@ namespace XML_Data_Reader
 
             return parameters;
         }
+        //Metoda do przetwarzania plików XML i zapisywania danych do arkusza Excel
         static void ProcessXmlToWorksheet(ExcelWorksheet worksheet, string[] xmlFiles, string referencePath, Dictionary<int,ParameterInfo> referenceParameters)
         {
+            //Wskazanie początkowej komórki do której wprowadzane mają być dane
             int columnIndex = 4;
             int rowIndex = 2;
             
+            //Iteracja przez wszystkie pliki XML znajdujące się we wskazanym folderze 
             foreach (string xmlFilePath in xmlFiles.Where(filePath => filePath != referencePath))
             {
                 Dictionary<int, ParameterInfo> parameters = ProcessXmlFile(xmlFilePath);
 
+                //Zapis wartości o konkretnym kluczu w wierszu nagłówkowym
                 worksheet.Cells[1, columnIndex].Value = parameters[31318].Value;
+                
+                //Iteracja przez klucze parametrów pliku referencyjnego
                 foreach (var refKey in referenceParameters)
                 {
+                    //Sprawdzenie czy plik zawiera dany klucz
                     if (parameters.ContainsKey(refKey.Key))
                     {
+                        //Zapis wartości parametru do odpowiedniej komórki w arkuszu
                         ParameterInfo parameter = parameters[refKey.Key];
                         worksheet.Cells[rowIndex, columnIndex].Value = parameter.Value;
                         rowIndex++;
                     }
                     else
                     {
+                        //Zapis informacji o brakujących danych, jeśli w pliku nie było parametru o podanym kluczu
                         worksheet.Cells[rowIndex, columnIndex].Value = "Missing data";
                         rowIndex++;
                     }
@@ -169,43 +190,5 @@ namespace XML_Data_Reader
             }
             return true;
         }
-
-        static void CompareParameterValues(Dictionary<int, ParameterInfo> parameters1, Dictionary<int, ParameterInfo> parameters2)
-        {
-            Console.WriteLine("Comparing parameter values between the two XML files:");
-
-            foreach (var kvp1 in parameters1)
-            {
-                if (parameters2.ContainsKey(kvp1.Key))
-                {
-                    ParameterInfo parameter2 = parameters2[kvp1.Key];
-                    
-                    if (kvp1.Value.Value == parameter2.Value)
-                    {
-                        Console.WriteLine($"Parameter with index {kvp1.Key} ({kvp1.Value.Name}) has the same value in both files: {kvp1.Value}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Parameter with index {kvp1.Key}({kvp1.Value.Name}) has different values:");
-                        Console.WriteLine($"   Value in the first file: {kvp1.Value.Value}");
-                        Console.WriteLine($"   Value in the second file: {parameter2.Value}");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Parameter with index {kvp1.Key} exists in the first file, but not in the second file.");
-                }
-            }
-
-            foreach (var kvp2 in parameters2)
-            {
-                if (!parameters1.ContainsKey(kvp2.Key))
-                {
-                    Console.WriteLine($"Parameter with index {kvp2.Key} exists in the second file, but not in the first file.");
-                }
-            }
-        }
-
-       
     }
 }
